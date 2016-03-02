@@ -10,8 +10,10 @@ struct server_config {
     int port = 0;
     char *dir = nullptr;
     bool test = false;
-};
 
-server_config server_config_read_opts(int argc, char *const *argv);
+    server_config(int argc, char *const *argv);
+
+    bool is_filled();
+};
 
 #endif //FINAL_SERVER_CONFIG_H
