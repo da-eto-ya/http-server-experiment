@@ -40,17 +40,17 @@ void server::run() {
 
     int sock = 0;
 
-//    if ((sock = open_socket()) < 0) {
-//        exit_error("Can't open socket", -3);
-//    }
-//
-//    if (bind_socket(sock) < 0) {
-//        exit_error("Can't bind socket", -4);
-//    }
-//
-//    if (listen(sock, SOMAXCONN) < 0) {
-//        exit_error("Can't listen", -5);
-//    }
+    if ((sock = open_socket()) < 0) {
+        exit_error("Can't open socket", -3);
+    }
+
+    if (bind_socket(sock) < 0) {
+        exit_error("Can't bind socket", -4);
+    }
+
+    if (listen(sock, SOMAXCONN) < 0) {
+        exit_error("Can't listen", -5);
+    }
 
     work_queue<int> queue;
     create_workers(queue);
@@ -59,7 +59,7 @@ void server::run() {
         threads[i] = std::thread(*workers[i]);
     }
 
-    std::thread main_thread([&] { main_loop(sock, queue);});
+    std::thread main_thread([&] { main_loop(sock, queue); });
     main_thread.join();
 
     for (unsigned int i = 0; i < WORKERS_COUNT; ++i) {
@@ -74,7 +74,14 @@ void server::create_workers(work_queue<int> &queue) {
 }
 
 int server::open_socket() {
-    return socket(AF_INET, SOCK_STREAM, 0);
+    int sock = socket(AF_INET, SOCK_STREAM, 0);
+
+    if (sock != -1) {
+        int opt = 1;
+        setsockopt(sock, SOL_SOCKET, (SO_REUSEADDR | SO_REUSEPORT), &opt, sizeof(opt));
+    }
+
+    return sock;
 }
 
 int server::bind_socket(int sock) {
@@ -92,23 +99,18 @@ void server::main_loop(int sock, work_queue<int> &queue) {
     sockaddr_in client;
     socklen_t address_size = sizeof(sockaddr_in);
 
-//    while (true) {
-//        if ((connection = accept(sock, (sockaddr *) &client, &address_size)) != -1) {
-//            std::unique_lock<std::mutex> lock(queue.m);
-//
-//        } else {
-//            // print err
-//        }
-//    }
     queue.done = false;
 
-    for (int i = 0; i < 10; ++i) {
-        std::this_thread::sleep_for(std::chrono::seconds(1));
-        std::unique_lock<std::mutex> lock(queue.m);
-        std::cout << "producing " << i << '\n';
-        queue.storage.push_back(i);
-        queue.notified = true;
-        queue.cond.notify_one();
+    // TODO: implement stop
+    while (true) {
+        if ((connection = accept(sock, (sockaddr *) &client, &address_size)) != -1) {
+            std::unique_lock<std::mutex> lock(queue.m);
+            queue.storage.push_back(connection);
+            queue.notified = true;
+            queue.cond.notify_one();
+        } else {
+            // print err
+        }
     }
 
     queue.done = true;

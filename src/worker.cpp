@@ -5,29 +5,33 @@
 #include <iostream>
 #include <thread>
 #include <unistd.h>
+#include <cstring>
 #include "worker.h"
 
 void worker::operator()() {
     auto tid = std::this_thread::get_id();
-    std::unique_lock<std::mutex> lock(queue.m);
 
     while (!queue.done) {
-        while (!queue.notified) {
-            queue.cond.wait(lock);
-        }
+        int connection = 0;
+        {
+            std::unique_lock<std::mutex> lock(queue.m);
+            while (!queue.notified) {
+                queue.cond.wait(lock);
+            }
 
-        if (queue.done) {
-            break;
-        }
+            if (queue.done) {
+                break;
+            }
 
-        int connection = queue.storage.front();
-        queue.storage.pop_front();
+            connection = queue.storage.front();
+            queue.storage.pop_front();
+        }
 
         // TODO: real work
         std::cout << tid << " : " << connection << std::endl;
-
-        // close(connection);
-
+        const char *buf = "Hello, World!\n";
+        write(connection, buf, strlen(buf));
+        close(connection);
         queue.notified = false;
     }
 
