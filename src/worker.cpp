@@ -40,6 +40,7 @@ void worker::operator()() {
     size_t resp_200_begin_length = strlen(resp_200_begin);
     char resp_404[] = "HTTP/1.0 404 Not Found\r\n";
     size_t resp_404_length = strlen(resp_404);
+    char url_name[buf_len];
 
     while (!queue.done) {
         int connection = 0;
@@ -93,10 +94,18 @@ void worker::operator()() {
         size_t parsed = http_parser_execute(parser, &settings, buf, (size_t) rec_len);
 
         if (!parser->upgrade && parsed == rec_len && data->url_at) {
-            strncpy(filename_ptr, data->url_at, data->url_length);
-            // TODO: replace ? sign
-            // TODO: url decode
-            filename_ptr[data->url_length] = '\0';
+            strncpy(url_name, data->url_at, data->url_length);
+            url_name[data->url_length] = '\0';
+
+            for (size_t i = 0; i < data->url_length; ++i) {
+                if (url_name[i] == '?') {
+                    url_name[i] = '\0';
+                    break;
+                }
+            }
+
+            urldecode2(filename_ptr, url_name);
+
             struct stat st;
             int stat_res = stat(fn, &st);
             int fd;
