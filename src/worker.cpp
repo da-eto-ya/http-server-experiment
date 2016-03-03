@@ -63,14 +63,14 @@ void worker::operator()() {
 
         size_t rec_len = 0;
 
-        while ((received = recv(connection, buf + rec_len, buf_len, 0)) > 0) {
+        /*while ((*/received = recv(connection, buf + rec_len, buf_len, 0);//) > 0) {
             rec_len += received;
-            fprintf(stderr, "%d %d\n", (int) rec_len, (int) received);
+//            fprintf(stderr, "%d %d\n", (int) rec_len, (int) received);
 
             if (received == 2 && buf[rec_len - 2] == '\r' && buf[rec_len - 1] == '\n') {
                 break;
             }
-        }
+        //}
 
         if (received < 0) {
             close(connection);
@@ -117,6 +117,8 @@ void worker::operator()() {
             }
 
             urldecode2(filename_ptr, path_begin);
+
+//            fprintf(stderr, "%s\n", path_begin);
 
             struct stat st;
             int stat_res = stat(fn, &st);
