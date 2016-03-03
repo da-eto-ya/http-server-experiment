@@ -41,6 +41,8 @@ void worker::operator()() {
     char resp_404[] = "HTTP/1.0 404 Not Found\r\n";
     size_t resp_404_length = strlen(resp_404);
     char url_name[buf_len];
+    char http_prefix[] = "http://";
+    size_t http_prefix_length = strlen(http_prefix);
 
     while (!queue.done) {
         int connection = 0;
@@ -104,7 +106,17 @@ void worker::operator()() {
                 }
             }
 
-            urldecode2(filename_ptr, url_name);
+            char *path_begin = url_name;
+
+            if (strncmp(http_prefix, path_begin, http_prefix_length) == 0) {
+                path_begin = url_name + http_prefix_length;
+
+                while (*path_begin != '\0' && *path_begin != '/') {
+                    path_begin++;
+                }
+            }
+
+            urldecode2(filename_ptr, path_begin);
 
             struct stat st;
             int stat_res = stat(fn, &st);
