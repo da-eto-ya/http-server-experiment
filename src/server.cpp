@@ -69,7 +69,7 @@ void server::run() {
 
 void server::create_workers(work_queue<int> &queue) {
     for (unsigned int i = 0; i < WORKERS_COUNT; ++i) {
-        workers[i] = new worker(queue);
+        workers[i] = new worker(queue, config.dir);
     }
 }
 
